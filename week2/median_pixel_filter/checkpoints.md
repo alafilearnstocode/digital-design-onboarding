@@ -1,39 +1,49 @@
 # Median Pixel Filter Checkpoints
 
-This file breaks the median pixel filter project into smaller checkpoints. Students should complete these in order before trying to write the full `median_filter` module.
+This breaks the median pixel filter project into smaller checkpoints so nobody has to jump straight into the full `median_filter` module with no clue what's going on.
 
-The goal is to understand how pixels move through hardware one clock cycle at a time
+The point isn't to memorize SystemVerilog syntax. The point is to understand how pixels move through hardware one clock cycle at a time.
 
-## How To Use These Checkpoints
+## How To Use This
 
 For each checkpoint:
 
-1. Read the goal.
-2. Fill in only the missing RTL for that checkpoint.
-3. Explain the signal timing to a teammate or lead.
-4. Move on only when the behavior makes sense.
+1. Read what the checkpoint is asking for.
+2. Fill in only that small part of the RTL.
+3. Explain what your signals are doing to someone else.
+4. Move on once the idea actually makes sense.
 
-A checkpoint is done when the student can explain what the circuit stores, what changes on a clock edge, and when the output is valid.
+You're done with a checkpoint when you can explain what gets stored, what changes on the clock edge, and when the output is valid.
 
 ## Checkpoint 1: Pixel Struct And Package
 
 ### Goal
 
-Understand that one pixel is not one number. It is a bundle of three color channels: red, green, and blue.
+First, understand what a pixel even is in this project.
 
-### Student Task
+A pixel isn't just one number. It's three numbers bundled together:
+
+```text
+red
+green
+blue
+```
+
+Each channel is 8 bits, so one pixel is really three 8-bit values grouped into one `pixel_t`.
+
+### What To Do
 
 Open `src/pixel_pkg.sv` and find `pixel_t`.
 
-Answer these questions:
+Answer these:
 
-1. How many bits wide is each color channel?
-2. How many total bits are in one `pixel_t`?
-3. Why do we put `pixel_t` in a package instead of redefining it in every file?
+1. How many bits is each color channel?
+2. How many total bits are in one pixel?
+3. Why do we put `pixel_t` in a package instead of copying it into every file?
 
-### Mini RTL Task
+### Quick Practice
 
-Create four example pixels on paper:
+Given these four pixels:
 
 ```text
 pixel_0 = R:100 G:26  B:120
@@ -42,19 +52,19 @@ pixel_2 = R:100 G:200 B:21
 pixel_3 = R:100 G:130 B:20
 ```
 
-Then write down the red list, green list, and blue list separately.
+Write the red values, green values, and blue values as three separate lists.
 
 ### Done When
 
-The student can explain that the median filter processes each color channel separately, then recombines the result into one output pixel.
+You can explain that we don't take the median of the whole pixel at once. We take the median of red, green, and blue separately, then put the output pixel back together.
 
 ## Checkpoint 2: Median Of Four Values
 
 ### Goal
 
-Build the smallest useful part of the project: a function that takes four 8-bit numbers and returns their median.
+Build the smallest useful piece: a function that takes four 8-bit numbers and returns the median.
 
-For a 2x2 kernel, there are four values. Since four is even, there is no single middle value. The median is the average of the two middle values after sorting.
+Because this project uses a 2x2 kernel, we always have four values. Since four is even, there's no single middle value. So we sort the four values, take the two middle values, average them, and round up if needed.
 
 Example:
 
@@ -76,9 +86,9 @@ average: 70.5
 rounded result: 71
 ```
 
-### Student Task
+### What To Do
 
-Implement or inspect a helper function like this:
+Implement or look at a helper function like this:
 
 ```systemverilog
 function automatic logic [PIXEL_W-1:0] find_median_channel(
@@ -99,17 +109,23 @@ The function should:
 
 ### Done When
 
-The student can compute the median of four values by hand and explain why the sum needs one extra bit.
+You can calculate the median of four values by hand and explain why the sum needs one extra bit.
 
 ## Checkpoint 3: RGB Median
 
 ### Goal
 
-Use the median helper three times: once for red, once for green, and once for blue.
+Now use the median helper three times:
 
-### Student Task
+```text
+once for red
+once for green
+once for blue
+```
 
-Given four pixels:
+### What To Do
+
+Given these four pixels:
 
 ```text
 top_left     = R:100 G:26  B:120
@@ -129,13 +145,17 @@ output pixel = R:? G:? B:?
 
 ### RTL Task
 
-Write or inspect a module that takes a 2x2 group of pixels and produces one median pixel.
+Write or look at a small module that takes a 2x2 group of pixels and outputs one median pixel.
 
-The module should not care about image width, image height, counters, or line buffers. It should only know how to calculate the median of four pixels.
+This module shouldn't care about the full image, counters, rows, columns, or line buffers. Its only job is:
+
+```text
+four pixels in -> one median pixel out
+```
 
 ### Done When
 
-The student can explain why this is combinational logic: if the four input pixels change, the output median pixel changes without waiting for a clock edge.
+You can explain why this part is combinational logic. If the four input pixels change, the output changes without waiting for a clock edge.
 
 ## Checkpoint 4: Row And Column Counter
 
@@ -143,7 +163,7 @@ The student can explain why this is combinational logic: if the four input pixel
 
 Track where the incoming pixel is in the image.
 
-Pixels arrive left to right, top to bottom:
+Pixels come in left to right, then top to bottom:
 
 ```text
 (0,0), (1,0), (2,0), (3,0)
@@ -152,45 +172,47 @@ Pixels arrive left to right, top to bottom:
 (0,3), (1,3), (2,3), (3,3)
 ```
 
-### Student Task
+### What To Do
 
-For a 4x4 image, fill in the next value of `col_count_q` and `row_count_q` after each valid input pixel.
+For a 4x4 image, write down the next value of `col_count_q` and `row_count_q` after each valid input pixel.
 
 ### RTL Task
 
-Implement counter logic with these rules:
+Build the counter logic with these rules:
 
 1. On reset, row and column go to 0.
 2. On `start_i`, row and column go to 0.
-3. If `pixel_valid_i` is 0, the counters hold their value.
-4. If `pixel_valid_i` is 1 and the current column is not the last column, increment column.
-5. If `pixel_valid_i` is 1 and the current column is the last column, set column to 0 and increment row.
+3. If `pixel_valid_i` is 0, the counters don't move.
+4. If `pixel_valid_i` is 1 and we're not at the last column, move one column to the right.
+5. If `pixel_valid_i` is 1 and we are at the last column, go back to column 0 and move down one row.
 
 ### Done When
 
-The student can explain why counters should only move when `pixel_valid_i` is high.
+You can explain why the counters only move when `pixel_valid_i` is high.
 
 ## Checkpoint 5: When Is A 2x2 Window Valid?
 
 ### Goal
 
-Understand that the filter cannot produce an output for the first row or first column.
+Figure out when we actually have enough pixels to make a 2x2 window.
 
-A 2x2 window ending at the current pixel needs:
+A 2x2 window ending at the current pixel looks like this:
 
 ```text
 top-left      top-right
 bottom-left   current pixel
 ```
 
-That means the current pixel must have:
+So the current pixel needs:
 
 1. A row above it.
 2. A column to the left of it.
 
-### Student Task
+That means the first row doesn't work, and the first column doesn't work.
 
-For a 4x4 input image, mark each input coordinate as valid or invalid:
+### What To Do
+
+For a 4x4 input image, mark each coordinate as valid or invalid:
 
 ```text
 (0,0) invalid   (1,0) invalid   (2,0) invalid   (3,0) invalid
@@ -201,7 +223,7 @@ For a 4x4 input image, mark each input coordinate as valid or invalid:
 
 ### RTL Task
 
-Create a signal like:
+Make a signal like this:
 
 ```systemverilog
 assign window_valid = pixel_valid_i &&
@@ -211,17 +233,17 @@ assign window_valid = pixel_valid_i &&
 
 ### Done When
 
-The student can explain why a 4x4 input image creates a 3x3 output image.
+You can explain why a 4x4 input image makes a 3x3 output image.
 
 ## Checkpoint 6: The Line Buffer
 
 ### Goal
 
-Understand why the design needs memory.
+Understand why we need memory.
 
-When the current pixel arrives, the module only sees one new pixel. To build a 2x2 window, it must remember old pixels from earlier cycles.
+The module only gets one new pixel at a time. But a 2x2 window needs four pixels. So the design has to remember pixels from earlier cycles.
 
-### Student Task
+### What To Do
 
 Label these four pixels:
 
@@ -230,7 +252,7 @@ top-left      top-right
 bottom-left   bottom-right
 ```
 
-Then match them to hardware storage:
+Then match them to the hardware:
 
 ```text
 bottom-right = current input pixel
@@ -241,7 +263,7 @@ top-left     = pixel from the previous column in the previous row
 
 ### RTL Task
 
-Use:
+You'll probably use signals like:
 
 ```systemverilog
 pixel_t line_buffer_q [IMAGE_LEN];
@@ -249,57 +271,57 @@ pixel_t current_row_prev_pixel_q;
 pixel_t previous_row_prev_pixel_q;
 ```
 
-The line buffer stores the previous row. Each time a valid pixel arrives, the current input pixel replaces the old pixel at that column.
+The line buffer stores the previous row. Every time a valid pixel comes in, the current input pixel replaces the old pixel at that column.
 
 ### Done When
 
-The student can explain why `top_right` must be read from the line buffer before the current pixel overwrites that location.
+You can explain why `top_right` has to be read from the line buffer before the current pixel overwrites that spot.
 
 ## Checkpoint 7: Output Valid Timing
 
 ### Goal
 
-Connect `pixel_valid_o` to the moment when the output pixel is real.
+Make sure `pixel_valid_o` lines up with the output pixel.
 
-### Student Task
+### What To Do
 
-Answer these questions:
+Answer these:
 
-1. Should `pixel_valid_o` be high for the first input pixel? Why or why not?
+1. Should `pixel_valid_o` be high for the first input pixel? Why?
 2. Should `pixel_valid_o` be high at coordinate `(1,1)`? Why?
 3. What should happen if `pixel_valid_i` is low for one cycle?
 
 ### RTL Task
 
-Register the output pixel and valid signal together.
+Register the output pixel and the valid signal together.
 
-The important rule is:
+The rule is simple:
 
 ```text
-If pixel_o updates this clock cycle, pixel_valid_o should describe that same output pixel.
+If pixel_o updates this cycle, pixel_valid_o should describe that same pixel_o.
 ```
 
 ### Done When
 
-The student can explain what output is valid on a waveform or in a cycle table.
+You can explain which output pixel is valid on each cycle.
 
 ## Checkpoint 8: Done Signal
 
 ### Goal
 
-Raise `done_o` after the final valid output pixel of the image.
+Pulse `done_o` after the final valid output pixel.
 
-### Student Task
+### What To Do
 
 For a 4x4 image:
 
-1. What is the last input coordinate?
-2. Is that input coordinate also a valid 2x2 window?
-3. How many total output pixels should be produced?
+1. What's the last input coordinate?
+2. Is that coordinate also a valid 2x2 window?
+3. How many output pixels should we get total?
 
 ### RTL Task
 
-Create a signal for the final valid window:
+Make a signal for the final valid window:
 
 ```systemverilog
 assign final_window = window_valid &&
@@ -307,17 +329,17 @@ assign final_window = window_valid &&
                       (col_count_q == LAST_COL);
 ```
 
-Then make `done_o` pulse when the final output pixel is produced.
+Then make `done_o` pulse when that final output pixel comes out.
 
 ### Done When
 
-The student can explain why `done_o` should pulse once, not stay high forever.
+You can explain why `done_o` should pulse once instead of staying high forever.
 
-## Checkpoint 9: Full Integration
+## Checkpoint 9: Put The Whole Thing Together
 
 ### Goal
 
-Connect all project pieces:
+Now connect all the pieces:
 
 1. Pixel package
 2. Median helper function
@@ -328,9 +350,9 @@ Connect all project pieces:
 7. Output pixel register
 8. Done signal
 
-### Student Task
+### What To Do
 
-Before writing code, draw the datapath:
+Before writing the full module, draw the datapath:
 
 ```text
 pixel_i
@@ -342,27 +364,27 @@ pixel_i
   +--> 2x2 window --> median calculation --> pixel_o
 ```
 
-Then write the RTL in small sections instead of all at once.
+Then write the RTL in chunks. Don't try to write the entire thing in one shot.
 
 ### Done When
 
-The design compiles and the student can explain every state-holding signal in the module.
+The design compiles, and you can explain every signal that stores state.
 
 ## Checkpoint 10: Run The Provided Test
 
 ### Goal
 
-Use the provided simulation to check the completed RTL.
+Run the provided test so you can see if your RTL output matches the expected output for the starter example.
 
-### Student Task
+### What To Do
 
-From the `sim` folder, run the provided simulation command or Makefile target.
+From the `sim` folder, run the provided command or Makefile target.
 
-The testbench will:
+The provided test will:
 
 1. Read input pixels from a CSV file.
 2. Feed them into the RTL one pixel at a time.
-3. Compare the RTL output pixels against the expected CSV file.
+3. Compare your RTL output against the expected CSV file.
 4. Print pass or fail.
 
 ### Done When
@@ -373,19 +395,21 @@ The simulation prints:
 PASS: median filter output matched expected CSV.
 ```
 
-This means the RTL passed the provided test. It does not mean the design has been exhaustively verified or tested on hardware.
+That means your RTL matches the expected CSV for the starter example. It doesn't mean you wrote a full verification environment, covered every corner case, or tested it on hardware.
 
-## Lead Review Questions
+## Questions Leads Can Ask
 
-Use these when checking student understanding:
+Use these to check if someone actually understands the project:
 
-1. Which signals are combinational and which signals are sequential?
+1. Which signals are combinational, and which ones are sequential?
 2. What does the line buffer store?
 3. Why is the first valid output at row 1, column 1?
 4. What happens when `pixel_valid_i` is low?
 5. Why does the 2x2 median need rounding?
 6. Why does a 4x4 input image produce a 3x3 output image?
-7. What exact cycle should `pixel_valid_o` go high?
-8. What exact cycle should `done_o` go high?
-9. What does the provided test prove?
-10. What does the provided test not prove?
+7. When should `pixel_valid_o` go high?
+8. When should `done_o` go high?
+9. What does the provided PASS message actually prove?
+10. What does the provided PASS message not prove?
+
+
