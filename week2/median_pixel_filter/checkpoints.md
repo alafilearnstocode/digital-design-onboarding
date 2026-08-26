@@ -2,7 +2,7 @@
 
 This breaks the median pixel filter project into smaller checkpoints so nobody has to jump straight into the full `median_filter` module with no clue what's going on.
 
-The point isn't to memorize SystemVerilog syntax. The point is to understand how pixels move through hardware one clock cycle at a time.
+The point is to understand how pixels move through hardware one clock cycle at a time.
 
 ## How To Use This
 
