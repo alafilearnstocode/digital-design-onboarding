@@ -34,7 +34,7 @@ module median_filter #(
   // Storage Buffer to hold pixels
   pixel_t                 pixel_shift_reg_d[SHIFT_REG_W];
   pixel_t                 pixel_shift_reg_q[SHIFT_REG_W];
-  pixel_t                 kernel           [KERNEL_LEN] [KERNEL_LEN];
+  pixel_t                 kernel           [KERNEL_LEN][KERNEL_LEN];
   pixel_t                 pixel_d;
 
   // Control Signals
