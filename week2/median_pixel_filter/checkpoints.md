@@ -2,7 +2,7 @@
 
 This file breaks the median pixel filter project into smaller checkpoints. Students should complete these in order before trying to write the full `median_filter` module.
 
-The goal is not to memorize SystemVerilog syntax. The goal is to understand how pixels move through hardware one clock cycle at a time.
+The goal is to understand how pixels move through hardware one clock cycle at a time
 
 ## How To Use These Checkpoints
 
