@@ -8,5 +8,10 @@ module median_kernel_calc (
   // TODO: Write a combinational block that calls the find_median_channel function on each color
   // Pass in all kernel values => [0][0], [0][1], [1][0], [1][1]
   // Re-combine the three function calls into one output pixel (pixel_o)
+  always_comb begin
+    pixel_o.red = find_median_channel(kernel_i[0][0].red, kernel_i[0][1].red, kernel_i[1][0].red, kernel_i[1][1].red);
+    pixel_o.green = find_median_channel(kernel_i[0][0].green, kernel_i[0][1].green, kernel_i[1][0].green, kernel_i[1][1].green);
+    pixel_o.blue = find_median_channel(kernel_i[0][0].blue, kernel_i[0][1].blue, kernel_i[1][0].blue, kernel_i[1][1].blue);
+  end
 
 endmodule

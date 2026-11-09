@@ -1,6 +1,6 @@
 import pixel_pkg::*;
 
-module median_filter_v2 #(
+module median_filter #(
   parameter int IMAGE_LEN    = 1080,
   parameter int IMAGE_HEIGHT = 720
 ) (
@@ -27,11 +27,19 @@ module median_filter_v2 #(
   // TODO: Below this enum, declare two instances of 'state_t',
   // One should represent the current state, then next represents the next state
   typedef enum logic [1:0] {IDLE, CALCULATE} state_t;
+  state_t state_d, state_q;
 
 
   // Row/Col Counters
   // TODO: Use the local parameters above to create an x_counter and a y_counter
   // Each counter needs an _q signal to store the counter value, and an _d signal to update that value
+  // _d
+  logic[X_COUNTER_W-1:0] x_counter_d;
+  logic[Y_COUNTER_W-1:0] y_counter_d;
+
+  //_q
+  logic [X_COUNTER_W-1:0] x_counter_q;
+  logic [Y_COUNTER_W-1:0] y_counter_q;
 
 
   // Storage Buffer to hold pixels
@@ -49,18 +57,63 @@ module median_filter_v2 #(
 
   // TODO: Write a combinational process to check if things are inbounds based on the current X and Y count
   // If the x counter is inbounds, set x_inbounds = 1, if y counter is inbounds, set y_inbounds = 1, else 0
+  always_comb begin
+    x_inbounds = x_counter_q != 0;
+    y_inbounds = y_counter_q != 0;
+  end
 
   // TODO: write a combinational process that shifts the input pixel into pixel_shift_reg_d
   // Make sure to check that the input pixel is valid.
+  always_comb begin
+    pixel_shift_reg_d = pixel_shift_reg_q;
+    if (pixel_valid_i) begin
+      pixel_shift_reg_d[0] = pixel_i;
+      for (int i =1; i < SHIFT_REG_W; i++) begin
+        pixel_shift_reg_d[i] = pixel_shift_reg_q[i-1];
+      end
+    end
+  end
   
   // Compute next State
   always_comb begin
     // TODO: Place your default values here to avoid latches
-
+    kernel_valid = '0;
+    done_d = '0;
+    x_counter_d = x_counter_q;
+    y_counter_d = y_counter_q;
+    state_d = state_q;
 
     // TODO Write a case statement here to decode the next state logic
     // This is the 1st process in your two process FSM
+    unique case (state_q)
+      IDLE: begin
+        x_counter_d = '0;
+        y_counter_d = '0;
+        if (start_i) begin
+          state_d = CALCULATE;
+        end
   end
+  CALCULATE: begin
+  if (pixel_valid_i) begin
+    x_counter_d = x_counter_q + 1;
+    kernel_valid = x_inbounds && y_inbounds;
+
+  if (x_counter_q == IMAGE_LEN-1) begin
+    x_counter_d = '0;
+    y_counter_d = y_counter_q + 1;
+
+  if (y_counter_q == IMAGE_HEIGHT -1) begin
+    y_counter_d = '0;
+    done_d = '1;
+    state_d = IDLE;
+  end
+  end
+  end
+  end
+  endcase
+  end
+
+
 
   // This masks the kernel to make things easier to read 
   always_comb begin
@@ -73,8 +126,30 @@ module median_filter_v2 #(
   // TODO: Instatitate an instance of the 'median_kernel_calc' module
   // This look in the folder for to see median_kernel_calc's input and output ports
   // HINT: Pass the entire kernel as the input into the module
+  median_kernel_calc median_kernel_calc_inst(
+    .kernel_i(kernel),
+    .pixel_o(pixel_d)
+  );
 
   // TODO: Write a synchronous clocked block to update our registers
   // Make sure that this block has a synchronous, active high reset
+  always_ff @(posedge clk) begin
+    if (rst) begin
+      state_q <= IDLE;
+      x_counter_q <= '0;
+      y_counter_q <= '0;
+      done_o <= '0;
+      pixel_valid_o <= '0;
+    end 
+      else begin
+      state_q <= state_d;
+      x_counter_q <= x_counter_d;
+      y_counter_q <= y_counter_d;
+      pixel_shift_reg_q <= pixel_shift_reg_d;
+      pixel_o <= pixel_d;
+      done_o <= done_d;
+      pixel_valid_o <= kernel_valid;
+      end
+  end
 
 endmodule

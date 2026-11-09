@@ -37,10 +37,37 @@ package pixel_pkg;
 
       // TODO: Sort the color values using the swap method 
       // Value_1 and value_2 will end up being the median values
+      if (value_0 > value_1) begin
+        swap_value = value_0;
+        value_0 = value_1;
+        value_1 = swap_value;
+      end
+      if (value_2 > value_3) begin
+        swap_value = value_2;
+        value_2 = value_3;
+        value_3 = swap_value;
+      end
+      if (value_0 > value_2) begin
+        swap_value = value_0;
+        value_0 = value_2;
+        value_2 = swap_value;
+      end
+      if (value_1 > value_3) begin
+        swap_value = value_1;
+        value_1 = value_3;
+        value_3 = swap_value;
+      end
+      if (value_1 > value_2) begin
+        swap_value = value_1;
+        value_1 = value_2;
+        value_2 = swap_value;
+      end
   
 
       // TODO: Find and return the adverage of value_1 + value_2 
       // Return this value in the variable 'find_median_channel'
+      median_sum = value_1 + value_2 + 1'b1; 
+      find_median_channel = median_sum >> 1; 
 
     end
   endfunction
